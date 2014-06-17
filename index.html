@@ -3,44 +3,88 @@
   <head>
     <title>Socket.IO chat</title>
     
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
+         /** { margin: 0; padding: 0; box-sizing: border-box; }*/
+      html,body { height: 100%; margin: 0px; padding: 0px; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; margin: 0; padding: 0; box-sizing: border-box; }
+      /*form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }*/
+      /*form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }*/
+      /*form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }*/
+      
+      .row, .container {height: 100%;}
+      
+      .zebra-list { list-style-type: none; margin: 0; padding: 0; }
+      .zebra-list li { padding: 5px 10px; }
+      .zebra-list li:nth-child(odd) { background: #eee; }
+      #contact {
+          position: relative;
+          height: 100%;
+      }
+      #submitform {
+          position: absolute;
+          bottom: 0;
+      }
     </style>
     
     <script src="/socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-    <script>
-    $(document).ready(function() {
-      var socket = io();
-      $('#submitform').submit(function(e){
-            e.preventDefault();
-            socket.emit('chat message', $('#m').val());
-            console.log('emit ', $('#m').val());
-            $('#m').val('');
-            
-            return false;
-      });
-      socket.on('chat message', function(msg){
-        $('#messages').append($('<li>').text(msg));
-      });
-      socket.on('disconnect', function(){
-        $('#messages').append($('<li>').text("Server disonnected"));
-      });
-    });
-    </script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
     
   </head>
   <body>
-    <ul id="messages"></ul>
-    <form id="submitform" action="">
-      <input id="m" type="text" autocomplete="off" /><button type="submit">Send</button>
-    </form>
+    <div class="container">
+            <div class="col-md-8" id="contact">
+                <ul id="messages" class="zebra-list"></ul>
+                
+                <form id="submitform" action="">
+                    <div class="input-group">
+                        <input id="m" type="text" autocomplete="off" class="form-control" />
+                        <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">Send</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <ul id="users" class="zebra-list"></ul>
+            </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            var socket = io();
+            var nick = prompt("What is your name?");
+            
+            socket.emit("join", nick);
+          
+          
+            $('#submitform').submit(function(e){
+                e.preventDefault();
+                socket.emit('send', $('#m').val());
+                //console.log('emit ', $('#m').val());
+                $('#m').val('');
+                
+                return false;
+            });
+            socket.on('chat', function(user, msg){
+                $('#messages').append($('<li>').html('<b>'+user+':</b> '+msg));
+            });
+            socket.on("update", function(msg) {
+                $('#messages').append($('<li>').text(msg));
+            });
+            socket.on("update-people", function(people){
+               $("#users").empty();
+                $.each(people, function(clientid, name) {
+                    var $u = $('<li>').text(name);
+                    if (name == nick) $u.addClass('current');
+                    $('#users').append($u);
+                }); 
+            });
+            socket.on('disconnect', function(){
+                $('#messages').append($('<li>').text("Server disonnected"));
+            });
+        });
+    </script>
   </body>
 </html>
